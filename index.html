@@ -305,35 +305,6 @@ function paintSpread(cs){
   }
 }
 
-<!-- ============ NUEVO: MÓDULO PREDICCIONES MODELO LAD ============ -->
-  <section class="quant" style="border-color: var(--green-dim);">
-    <h2>Ensemble LAD · Predicción Oferta<span class="pill">Modelo Propio</span></h2>
-    <div class="sub">Proyección del inventario de matanza (t+1) basada en el ensamble LAD de sub-modelos.</div>
-    
-    <div class="kpis">
-      <div class="kpi big" style="border-color: var(--green);">
-        <div class="lab">Estimación Maestra</div>
-        <div class="val" id="kpi-lad-val">422,513</div>
-        <div class="note" id="kpi-lad-note">Cabezas esperadas (t+1)</div>
-      </div>
-      <div class="kpi">
-        <div class="lab">Sesgo vs Media 20d</div>
-        <div class="val" id="kpi-lad-bias" style="color: var(--green);">+1.54%</div>
-        <div class="note">Tendencia respecto al real</div>
-      </div>
-      <div class="kpi">
-        <div class="lab">Error MAE (Modelo)</div>
-        <div class="val" id="kpi-lad-mae">1,517</div>
-        <div class="note">Precisión histórica (test)</div>
-      </div>
-    </div>
-
-    <div class="verdict" id="verdict-lad" style="margin-top:16px;">
-      <span class="ico" id="verdict-lad-ico"></span>
-      <span id="verdict-lad-txt"></span>
-    </div>
-  </section>
-
 /* ============================================================================
    ARRANQUE
    ============================================================================ */
@@ -364,35 +335,6 @@ function paintSpread(cs){
 
   // 3) Auto-refresh cada 1 hora
   setTimeout(()=>location.reload(), 1*60*60*1000);
-
-  /* Integración del Modelo LAD */
-async function paintLADModel() {
-    // Estos valores vendrían de tu modelo en R (JSON exportado)
-    const ladData = {
-        val: 422513,
-        bias: 1.54,
-        mae: 1517,
-        status: 'short' // 'short' o 'long'
-    };
-
-    document.getElementById('kpi-lad-val').textContent = ladData.val.toLocaleString();
-    document.getElementById('kpi-lad-bias').textContent = (ladData.bias > 0 ? '+' : '') + ladData.bias + '%';
-    document.getElementById('kpi-lad-mae').textContent = ladData.mae.toLocaleString();
-
-    const v = document.getElementById('verdict-lad');
-    const vt = document.getElementById('verdict-lad-txt');
-    
-    if (ladData.status === 'short') {
-        v.className = "verdict a-short";
-        vt.innerHTML = "<b>Señal SHORT:</b> La sobreoferta proyectada (+1.54%) sugiere una presión a la baja en el precio del cerdo.";
-    } else {
-        v.className = "verdict a-long";
-        vt.innerHTML = "<b>Señal LONG:</b> El modelo proyecta escasez, sugiriendo una oportunidad de compra.";
-    }
-}
-
-// Llamar a la función al arrancar
-paintLADModel();
 })();
 </script>
 </body>
