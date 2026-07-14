@@ -304,6 +304,62 @@ function paintSpread(cs){
     vt.innerHTML=`<b>Estructura plana.</b> Front y Back casi al mismo precio (spread ${s.toFixed(2)}). Sin señal clara de escasez ni abundancia para la próxima semana.`;
   }
 }
+  <!-- Módulo Predictivo Integrado -->
+<section class="quant" id="lad-section" style="border-color: var(--green-dim); display: none;">
+  <h2>Ensemble LAD · Predicción Oferta<span class="pill">Modelo Propio</span></h2>
+  <div class="sub">Proyección del inventario de matanza (t+1) basada en el ensamble LAD.</div>
+  
+  <div class="kpis">
+    <div class="kpi big" style="border-color: var(--green);">
+      <div class="lab">Estimación Maestra</div>
+      <div class="val" id="kpi-lad-val">—</div>
+      <div class="note">Cabezas esperadas (t+1)</div>
+    </div>
+    <div class="kpi">
+      <div class="lab">Sesgo vs Media 20d</div>
+      <div class="val" id="kpi-lad-bias">—</div>
+      <div class="note">Tendencia respecto al real</div>
+    </div>
+    <div class="kpi">
+      <div class="lab">Error MAE (Modelo)</div>
+      <div class="val" id="kpi-lad-mae">—</div>
+      <div class="note">Precisión histórica</div>
+    </div>
+  </div>
+
+  <div class="verdict" id="verdict-lad" style="margin-top:16px;">
+    <span class="ico" id="verdict-lad-ico"></span>
+    <span id="verdict-lad-txt">Cargando datos del modelo...</span>
+  </div>
+</section>
+
+<script>
+// Función segura para actualizar el nuevo módulo
+function updateLADModule(data) {
+    const section = document.getElementById('lad-section');
+    if (!section) return; // Si no encuentra el elemento, no hace nada
+    
+    section.style.display = 'block'; // Muestra la sección
+    document.getElementById('kpi-lad-val').textContent = data.val.toLocaleString();
+    document.getElementById('kpi-lad-bias').textContent = (data.bias > 0 ? '+' : '') + data.bias + '%';
+    document.getElementById('kpi-lad-mae').textContent = data.mae.toLocaleString();
+
+    const v = document.getElementById('verdict-lad');
+    const vt = document.getElementById('verdict-lad-txt');
+    
+    if (data.status === 'short') {
+        v.className = "verdict a-short";
+        vt.innerHTML = "<b>Señal SHORT:</b> La sobreoferta proyectada (" + data.bias + "%) sugiere presión a la baja.";
+    } else {
+        v.className = "verdict a-long";
+        vt.innerHTML = "<b>Señal LONG:</b> El modelo proyecta escasez (" + data.bias + "%), sugiriendo oportunidad de compra.";
+    }
+}
+
+// Simulamos los datos (en producción, esto vendría de un JSON externo)
+const mockLADData = { val: 422513, bias: 1.54, mae: 1517, status: 'short' };
+updateLADModule(mockLADData);
+</script>
 
 /* ============================================================================
    ARRANQUE
