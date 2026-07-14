@@ -151,10 +151,10 @@
         <div class="kpi big" style="border-color: var(--green);">
           <div class="lab">Estimación Maestra</div>
           <div class="val" id="kpi-lad-val">—</div>
-          <div class="note">Cabezas esperadas (t+1)</div>
+          <div class="note">Matanza Semanal Proyectada (Actualización Diaria)</div>
         </div>
         <div class="kpi">
-          <div class="lab">Sesgo vs Media 20d</div>
+          <div class="lab">Sesgo vs Media 4 Semanas</div>
           <div class="val" id="kpi-lad-bias">—</div>
         </div>
         <div class="kpi">
@@ -355,12 +355,12 @@ function evaluateEdge() {
     }
 
     // LÓGICA SHORT: Modelo prevé ABUNDANCIA (Bias > 0.5%) pero el mercado paga ESCASEZ (Spread > 0.15)
-    if (currentBias > 0.5 && currentSpread > NEUTRAL_SPREAD) {
+    if (currentBias > 1.25 && currentSpread > NEUTRAL_SPREAD) {
         box.className = "alpha-res short"; badge.textContent = "OPORTUNIDAD SHORT";
         txt.innerHTML = `El mercado financiero está ciego. Paga una prima de <b>+${currentSpread.toFixed(2)}</b> (Backwardation) esperando escasez, pero el modelo físico detecta un fuerte empuje de oferta (<b>+${currentBias}%</b>). Venta del spread frontal recomendada.`;
     } 
     // LÓGICA LONG: Modelo prevé ESCASEZ (Bias < -0.5%) pero mercado descuenta ABUNDANCIA (Spread < -0.15)
-    else if (currentBias < -0.5 && currentSpread < -NEUTRAL_SPREAD) {
+    else if (currentBias < -1.25 && currentSpread < -NEUTRAL_SPREAD) {
         box.className = "alpha-res long"; badge.textContent = "OPORTUNIDAD LONG";
         txt.innerHTML = `Fuerte desconexión alcista. El mercado de papel descuenta exceso de inventario (Contango de <b>${currentSpread.toFixed(2)}</b>), pero la cadena de Markov y el LAD proyectan un vacío de animales (<b>${currentBias}%</b>). Compra agresiva recomendada.`;
     } 
@@ -390,10 +390,23 @@ function evaluateEdge() {
   try { const cs=await buildSpread(); paintSpread(cs); } catch(e) { paintSpread(null); }
 
   // 3. LAD Model (Mock Data - simulando la salida de tu script de R)
-  // Nota: Juega con estos valores. Pon bias: 1.5 y en el spread asume > 0.15 para ver la alerta SHORT.
-  const mockLAD = { val: 2485000, bias: 1.54, mae: 14500 };
-  paintLADModel(mockLAD);
-
+  // 3. LAD Model (Carga dinámica del pipeline Cuantitativo)
+  // Añadimos un timestamp a la URL para evitar que el navegador guarde el JSON viejo en caché
+  let ladData = null;
+  try {
+    const resLAD = await fetch('/data/lad_model.json?nocache=' + new Date().getTime());
+    if(resLAD.ok) {
+      ladData = await resLAD.json();
+    } else {
+      throw new Error('JSON no encontrado');
+    }
+  } catch(e) {
+    console.warn("Fallo al cargar el modelo LAD. Usando fallback.", e);
+    // Fallback de seguridad por si el servidor falla
+    ladData = { val: 0, bias: 0, mae: 0, status: 'error' };
+  }
+  
+  if (ladData.val > 0) paintLADModel(ladData);
   // 4. Calcular el Edge final
   evaluateEdge();
 
