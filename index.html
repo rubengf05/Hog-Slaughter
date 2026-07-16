@@ -409,21 +409,45 @@ async function updateMarketData() {
 /* ============================================================================
    MOTOR PRINCIPAL Y AUTO-REFRESH INTEGRAL
    ============================================================================ */
-(async()=>{
-  // 1. Carga inicial
-  await updateUSDAData();
-  await updateMarketData();
-  runAndPaintLADModel();
-  evaluateEdge();
-  document.getElementById('updated-at').textContent = new Date().toLocaleString('es-ES',{timeStyle:'short'});
+async function buildReport() {
+  const status = document.getElementById('status');
+  const stxt = document.getElementById('status-txt');
 
-  // 2. Polling: Refrescar la tabla, el mercado y la divergencia cada 60 segundos
-  setInterval(async () => {
-    await updateUSDAData();
-    await updateMarketData();
+  try {
+    // 1. Llamadas a la API (NASS y Yahoo simultáneos si lo deseas, o secuenciales)
+    const rows = await loadHistory();
+    if (rows.length) {
+      renderTable(rows.slice(-WINDOW_WEEKS));
+    }
+
+    const cs = await buildSpread();
+    paintSpread(cs);
+
+    // 2. Ejecutar Modelo LAD y Edge
+    runAndPaintLADModel();
     evaluateEdge();
-    document.getElementById('updated-at').textContent = new Date().toLocaleString('es-ES',{timeStyle:'short'});
-  }, 60000);
+
+    // 3. Actualizar fechas generales
+    const now = new Date().toLocaleString('es-ES', { timeStyle: 'short' });
+    document.getElementById('updated-at').textContent = now;
+
+    // Éxito visual
+    status.className = 'status live';
+    stxt.textContent = 'Pipeline online: Extracción USDA + CME completada.';
+
+  } catch (err) {
+    console.warn('Datos en vivo no disponibles o incompletos:', err.message);
+    status.className = 'status fallback';
+    stxt.textContent = 'Sin conexión USDA/CME. Mostrando datos estáticos.';
+  }
+}
+
+// Iniciar reporte
+(async () => {
+  await buildReport();
+  
+  // Auto-refresh cada 60 segundos
+  setInterval(buildReport, 60000);
 })();
 </script>
 </body>
