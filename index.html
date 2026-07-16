@@ -179,7 +179,7 @@
 
   <footer class="method">
     <small><b>Trader's Edge Logic:</b> El módulo de <i>Alpha</i> busca ineficiencias de precio cruzando los datos físicos con la curva financiera. Se genera una oportunidad <b>SHORT</b> cuando el modelo fundamental proyecta un exceso de oferta (sesgo alcista en matanza), pero la curva de futuros está en Backwardation (asumiendo escasez y pagando prima). Se genera una oportunidad <b>LONG</b> a la inversa (el fundamental proyecta escasez, pero el papel descuenta abundancia en Contango).</small>
-    <div class="foot-meta">Fuentes: NASS QuickStats · Yahoo Finance | Reporte autogenerado en Netlify. Actualización: <span id="updated-at">—</span></div>
+    <div class="foot-meta">Fuentes:  QuickStats · Yahoo Finance | Reporte autogenerado en Netlify. Actualización: <span id="updated-at">—</span></div>
   </footer>
 </div>
 
@@ -187,7 +187,7 @@
 /* ============================================================================
    CONFIGURACIÓN Y VARIABLES GLOBALES
    ============================================================================ */
-const NASS_KEY = 'EB7D3956-F3E0-3023-A6E7-602F604D4B67';
+const _KEY = 'EB7D3956-F3E0-3023-A6E7-602F604D4B67';
 const WINDOW_WEEKS = 17;
 const HISTORY_YEARS = 5;
 const NEUTRAL_SPREAD = 0.15; // Umbral de ruido para el spread
@@ -205,10 +205,11 @@ let currentBias = null;
 /* ============================================================================
    HELPERS GENERALES
    ============================================================================ */
-async function nass(params){
-  const qs = new URLSearchParams({ key:NASS_KEY, format:'JSON', ...params });
-  const res = await fetch(`/usda-api/?${qs.toString()}`);
-  if(!res.ok) throw new Error('HTTP ' + res.status);
+async function nass(params) {
+  const qs = new URLSearchParams({ key: NASS_KEY, format: 'JSON', ...params });
+  // La barra antes de la interrogación es vital para que coincida con "/usda-api/*"
+  const res = await fetch('/usda-api/?' + qs.toString());
+  if (!res.ok) throw new Error('HTTP ' + res.status);
   const json = await res.json();
   return json.data || [];
 }
