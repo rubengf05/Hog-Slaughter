@@ -1,33 +1,30 @@
-# =============================================================
-#  netlify.toml — Informe Hogs and Pigs (datos en vivo)
-#  Va en la RAÍZ del deploy, junto a index.html y diagnostico.html
-#  NO usar _redirects (los archivos que empiezan con _ se ocultan
-#  al descomprimir ZIPs en Mac/Windows y no llegan a Netlify).
-# =============================================================
+# ============================================================
+#  netlify.toml  —  Proxies para SpreadGreg Quant Report
+#  Coloca este archivo en la RAÍZ del repositorio (junto a index.html)
+# ============================================================
 
-# ---- Proxy USDA NASS QuickStats (evita el bloqueo CORS) ----
+# --- USDA NASS QuickStats ---
+# El navegador llama a  /usda-api/?key=...&...  y Netlify lo reenvía a la API real.
 [[redirects]]
-  from = "/nass-api"
-  to = "https://quickstats.nass.usda.gov/api/api_GET/"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/nass-api/*"
+  from = "/usda-api/*"
   to = "https://quickstats.nass.usda.gov/api/api_GET/:splat"
   status = 200
   force = true
 
-# ---- Proxy Yahoo Finance (Lean Hogs futures, HE=F) ----
+# --- Yahoo Finance (endpoint primario) ---
 [[redirects]]
   from = "/yahoo/*"
   to = "https://query1.finance.yahoo.com/:splat"
   status = 200
   force = true
 
-# Fallback de Yahoo por si query1 limita las peticiones
+# --- Yahoo Finance (endpoint secundario / respaldo) ---
 [[redirects]]
   from = "/yahoo2/*"
   to = "https://query2.finance.yahoo.com/:splat"
   status = 200
   force = true
+
+# No hay build: es un sitio estático de un solo archivo.
+[build]
+  publish = "."
