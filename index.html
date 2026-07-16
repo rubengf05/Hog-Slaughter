@@ -207,7 +207,7 @@ let currentBias = null;
    ============================================================================ */
 async function nass(params){
   const qs = new URLSearchParams({ key:NASS_KEY, format:'JSON', ...params });
-  const res = await fetch('/nass-api?' + qs.toString());
+  const res = await fetch(`/usda-api/?${qs.toString()}`);
   if(!res.ok) throw new Error('HTTP ' + res.status);
   const json = await res.json();
   return json.data || [];
@@ -378,30 +378,51 @@ function evaluateEdge() {
 }
 
 /* ============================================================================
-   MOTOR PRINCIPAL DE INICIO
+   REFRESCO DE DATOS (POLLING)
+   ============================================================================ */
+async function updateUSDAData() {
+  const status = document.getElementById('status'), stxt = document.getElementById('status-txt');
+  try {
+    const rows = await loadHistory(); 
+    if(rows.length) {
+      renderTable(rows.slice(-WINDOW_WEEKS));
+      status.className = 'status live';
+      stxt.textContent = 'Pipeline online: Extracción USDA + CME completada.';
+    }
+  } catch(e) { 
+    console.error(e);
+    status.className = 'status fallback';
+    stxt.textContent = 'Sin conexión USDA. Reintentando...'; 
+  }
+}
+
+async function updateMarketData() {
+  try { 
+    const cs = await buildSpread(); 
+    paintSpread(cs); 
+  } catch(e) { 
+    paintSpread(null); 
+  }
+}
+
+/* ============================================================================
+   MOTOR PRINCIPAL Y AUTO-REFRESH INTEGRAL
    ============================================================================ */
 (async()=>{
-  const status=document.getElementById('status'), stxt=document.getElementById('status-txt');
-  
-  // 1. Cargar Datos USDA
-  try {
-    const rows=await loadHistory(); 
-    if(rows.length) renderTable(rows.slice(-WINDOW_WEEKS));
-    status.className='status live'; stxt.textContent='Pipeline online: Extracción USDA + CME completada.';
-  } catch(e) { 
-    status.className='status fallback'; stxt.textContent='Sin conexión USDA. Reintentando...'; 
-  }
-
-  // 2. Cargar Datos Yahoo Finance
-  try { const cs=await buildSpread(); paintSpread(cs); } catch(e) { paintSpread(null); }
-
-  // 3. Ejecutar Modelo LAD interno
+  // 1. Carga inicial
+  await updateUSDAData();
+  await updateMarketData();
   runAndPaintLADModel();
-
-  // 4. Evaluar Divergencia
   evaluateEdge();
+  document.getElementById('updated-at').textContent = new Date().toLocaleString('es-ES',{timeStyle:'short'});
 
-  document.getElementById('updated-at').textContent=new Date().toLocaleString('es-ES',{timeStyle:'short'});
+  // 2. Polling: Refrescar la tabla, el mercado y la divergencia cada 60 segundos
+  setInterval(async () => {
+    await updateUSDAData();
+    await updateMarketData();
+    evaluateEdge();
+    document.getElementById('updated-at').textContent = new Date().toLocaleString('es-ES',{timeStyle:'short'});
+  }, 60000);
 })();
 </script>
 </body>
